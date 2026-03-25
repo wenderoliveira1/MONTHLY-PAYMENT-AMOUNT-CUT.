@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>MagaLog | Dashboard Financeiro</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    /* ========================================= */
+    /* RESET E VARIÁVEIS CLEAN                   */
+    /* ========================================= */
+    :root {
+      --bg-page: #f4f6f8; /* Fundo oficial Magalulog */
+      --bg-card: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border-light: #e2e8f0;
+      --color-brand: #0080ff; /* Azul Magalu */
+      --color-success: #10b981;
+      --color-warning: #f59e0b;
+      --color-danger: #ef4444;
+      --color-emb: #3b82f6;
+      --color-imp: #8b5cf6;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+    body { background-color: var(--bg-page); color: var(--text-main); padding-bottom: 50px; }
+
+    /* ========================================= */
+    /* HEADER ESTILO MAGALULOG                   */
+    /* ========================================= */
+    .header {
+      background-color: var(--color-brand);
+      padding: 16px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    
+    /* A barrinha colorida da marca no topo do cabeçalho */
+    .header::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 5px;
+      background: linear-gradient(90deg, #ff0000 0%, #ff8c00 20%, #ffff00 40%, #00ff00 60%, #00bfff 80%, #8a2be2 100%);
+    }
+
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    
+    /* Estilo do Logo Textual */
+    .brand-logo { 
+      font-size: 22px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px; 
+      display: flex; align-items: center; gap: 8px;
+    }
+    .brand-logo span { color: #ffffff; font-weight: 400; font-size: 20px;}
+    
+    .print-btn {
+      background: rgba(255, 255, 255, 0.15); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.3);
+      padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; 
+      cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px;
+    }
+    .print-btn:hover { background: rgba(255, 255, 255, 0.25); border-color: #ffffff; }
+
+    /* ========================================= */
+    /* FILTRO DE MESES (TABS SUTIS)              */
+    /* ========================================= */
+    .month-bar {
+      padding: 24px 40px 0 40px; display: flex; gap: 10px; overflow-x: auto;
+    }
+    .month-btn {
+      background: transparent; border: 1px solid transparent; padding: 6px 16px; 
+      border-radius: 20px; font-weight: 500; font-size: 14px; color: var(--text-muted); 
+      cursor: pointer; transition: all 0.2s; white-space: nowrap;
+    }
+    .month-btn:hover { background: #e2e8f0; color: var(--text-main); }
+    .month-btn.active {
+      background: var(--color-brand); color: #fff; font-weight: 600;
+    }
+
+    /* ========================================= */
+    /* LAYOUT PRINCIPAL (SEMÂNTICO)              */
+    /* ========================================= */
+    .dashboard-layout {
+      display: flex; gap: 24px; padding: 24px 40px; flex-wrap: wrap; align-items: flex-start;
+    }
+    .main-content { flex: 3; min-width: 60%; display: flex; flex-direction: column; gap: 24px; }
+    .side-content {
+      flex: 1; min-width: 320px; background: var(--bg-card); border-radius: 12px;
+      border: 1px solid var(--border-light); padding: 24px; position: sticky; top: 80px;
+    }
+
+    /* ========================================= */
+    /* CARDS CLEAN                               */
+    /* ========================================= */
+    .card {
+      background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-light);
+      padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+    .cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; }
+    
+    .summary-card {
+      border-left: 4px solid var(--color-success); display: flex; justify-content: space-between; align-items: center;
+    }
+    .card-label { font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; display: block; }
+    .card-value { font-size: 32px; font-weight: 700; color: var(--text-main); letter-spacing: -1px; }
+    
+    .info-row { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #f1f5f9; }
+    .info-row:last-of-type { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+    .info-label { color: var(--text-muted); }
+    .info-val { font-weight: 600; color: var(--text-main); }
+    
+    .progress-wrapper { background: #f1f5f9; border-radius: 4px; height: 6px; width: 100%; overflow: hidden; margin: 16px 0 8px 0; }
+    .progress-bar { height: 100%; border-radius: 4px; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+    .perc-text { display: flex; justify-content: space-between; font-size: 12px; font-weight: 500; color: var(--text-muted); }
+
+    /* ========================================= */
+    /* CALCULADORA LATERAL (CLEAN)               */
+    /* ========================================= */
+    .side-title { font-size: 16px; font-weight: 600; color: var(--text-main); margin-bottom: 20px; }
+    
+    .check-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+    .check-label {
+      display: flex; align-items: center; justify-content: center; padding: 8px;
+      border-radius: 6px; border: 1px solid var(--border-light); cursor: pointer;
+      font-size: 13px; font-weight: 500; color: var(--text-muted); transition: all 0.2s; user-select: none;
+    }
+    .check-label:hover { background: #f8fafc; }
+    .check-label.active-mark { background: #eff6ff; border-color: #bfdbfe; color: var(--color-brand); font-weight: 600; }
+    .check-label input { display: none; }
+
+    .quick-actions { display: flex; gap: 6px; margin-bottom: 24px; flex-wrap: wrap; }
+    .quick-btn {
+      background: transparent; border: 1px solid var(--border-light); padding: 4px 10px;
+      border-radius: 4px; font-size: 11px; font-weight: 600; color: var(--text-muted);
+      cursor: pointer; transition: 0.2s;
+    }
+    .quick-btn:hover { background: #f1f5f9; color: var(--text-main); }
+
+    .side-result-item { margin-bottom: 16px; }
+    .side-result-label { font-size: 12px; color: var(--text-muted); font-weight: 500; display: block; margin-bottom: 4px; }
+    .side-result-val { font-size: 24px; font-weight: 700; color: var(--text-main); letter-spacing: -0.5px; }
+    
+    .clean-breakdown { display: flex; gap: 12px; font-size: 12px; margin-top: 4px; }
+    .clean-breakdown span { color: var(--text-muted); }
+    .clean-breakdown strong { color: var(--text-main); font-weight: 600; }
+
+    #loader { text-align: center; padding: 60px; font-size: 15px; font-weight: 500; color: var(--text-muted); }
+
+    /* ========================================= */
+    /* MÁGICA DO PDF                             */
+    /* ========================================= */
+    @media print {
+      body { background: #fff !important; }
+      .header, .month-bar, .print-btn, .quick-actions { display: none !important; }
+      .dashboard-layout { padding: 0; gap: 16px; display: flex; flex-direction: row; flex-wrap: nowrap; }
+      .side-content { border: none; padding: 0; box-shadow: none; border-left: 1px solid var(--border-light); padding-left: 24px; }
+      .card { box-shadow: none; break-inside: avoid; }
+      @page { size: A4 landscape; margin: 15mm; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <div class="header-left">
+      <div class="brand-logo">
+        📦 MagaLog <span>| Suprimentos CD 2500</span>
+      </div>
+      <span style="color: rgba(255,255,255,0.4); margin: 0 10px;">|</span>
+      <span id="currentMonthText" style="font-size: 14px; color: #ffffff; font-weight: 500;"></span>
+    </div>
+    <button class="print-btn" onclick="window.print()">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z"></path></svg>
+      Gerar PDF
+    </button>
+  </header>
+
+  <nav class="month-bar" id="monthFilterContainer"></nav>
+  
+  <div id="loader">Carregando dados da planilha...</div>
+  
+  <main class="dashboard-layout" id="dashboardLayout" style="display: none;">
+    
+    <section class="main-content">
+      
+      <article class="card summary-card" id="summaryArea"></article>
+      
+      <div class="cards-grid" id="cardsArea"></div>
+      
+      <article class="card">
+        <span class="card-label">Tendência de Consumo (Todos os Meses)</span>
+        <canvas id="lineChart" height="70"></canvas>
+      </article>
+
+    </section>
+
+    <aside class="side-content">
+      <h2 class="side-title">Calculadora de Período</h2>
+      <div id="checklistArea"></div>
+      <div id="sidePanelArea"></div>
+    </aside>
+
+  </main>
+
+  <script>
+    let rawData = [];
+    let uniqueDates = [];
+    let myLineChart = null;
+
+    // Funções Utilitárias
+    function parseCurrency(val) {
+      if(!val) return 0;
+      let cleanVal = val.toString().replace('R$', '').replace(/\./g, '').replace(',', '.').trim();
+      return parseFloat(cleanVal) || 0;
+    }
+    function formatCurrency(num) { return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+    
+    function getSafeDateString(dateVal) {
+      if (!dateVal) return "";
+      let str = dateVal.toString().trim();
+      if (str.includes('/')) return str; 
+      try { let d = new Date(dateVal); if (!isNaN(d.getTime())) return d.toLocaleDateString('pt-BR'); } catch(e) {}
+      return str; 
+    }
+
+    function formatMonthName(dateStr) {
+      if (!dateStr) return "N/D";
+      let parts = dateStr.split('/');
+      if(parts.length === 3) {
+        const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+        return `${months[parseInt(parts[1], 10)-1]}/${parts[2].substring(2)}`;
+      }
+      return dateStr;
+    }
+
+    // Inicialização
+    window.onload = function() {
+      google.script.run.withSuccessHandler(processData).withFailureHandler(showError).getDashboardData();
+    };
+
+    function processData(response) {
+      if (response.error) { showError(response.error); return; }
+      const data = response.data;
+      if (data.length <= 1) { showError("Planilha vazia."); return; }
+
+      rawData = data.slice(1).filter(row => row[0] && row[0].toString().trim() !== "").map(row => {
+        row[0] = getSafeDateString(row[0]); return row;
+      }); 
+
+      uniqueDates = [...new Set(rawData.map(r => r[0]))];
+
+      renderMonthButtons(); 
+      renderChecklist();    
+      renderHistoricalChart(); 
+      
+      const lastRow = rawData[rawData.length - 1];
+      if(lastRow) {
+        loadMonthData(lastRow[0]); 
+        checkLastN(3); 
+      }
+    }
+
+    // --- RENDERIZAÇÃO ESQUERDA ---
+    function renderMonthButtons() {
+      let html = '';
+      uniqueDates.forEach((exactDate, index) => {
+        let btnLabel = formatMonthName(exactDate);
+        html += `<button class="month-btn" id="btn-${index}" onclick="loadMonthData('${exactDate}')">${btnLabel}</button>`;
+      });
+      document.getElementById('monthFilterContainer').innerHTML = html;
+    }
+
+    function loadMonthData(selectedDate) {
+      const monthRow = rawData.find(row => row[0] === selectedDate);
+      if(!monthRow) return;
+
+      document.querySelectorAll('.month-btn').forEach(btn => btn.classList.remove('active'));
+      const btnIndex = uniqueDates.indexOf(selectedDate);
+      document.getElementById(`btn-${btnIndex}`).classList.add('active');
+      
+      document.getElementById('currentMonthText').innerText = formatMonthName(selectedDate);
+      document.getElementById('loader').style.display = 'none';
+      document.getElementById('dashboardLayout').style.display = 'flex';
+
+      renderMainCards(monthRow);
+    }
+
+    function renderMainCards(row) {
+      let embTotal = parseCurrency(row[1]), embUsada = parseCurrency(row[2]), embSobra = parseCurrency(row[3]);
+      let impTotal = parseCurrency(row[4]), impUsada = parseCurrency(row[5]), impSobra = parseCurrency(row[6]);
+      let sobraTotal = parseCurrency(row[7]);
+
+      let embPerc = embTotal > 0 ? (embUsada / embTotal) * 100 : 0;
+      let impPerc = impTotal > 0 ? (impUsada / impTotal) * 100 : 0;
+
+      let embColor = embPerc >= 90 ? "var(--color-danger)" : (embPerc >= 70 ? "var(--color-warning)" : "var(--color-emb)");
+      let impColor = impPerc >= 90 ? "var(--color-danger)" : (impPerc >= 70 ? "var(--color-warning)" : "var(--color-imp)");
+
+      document.getElementById('summaryArea').innerHTML = `
+        <div><span class="card-label">Sobra Total do Mês</span><div class="card-value">${formatCurrency(sobraTotal)}</div></div>
+      `;
+
+      document.getElementById('cardsArea').innerHTML = `
+        <article class="card">
+          <span class="card-label">📦 Embalagem</span>
+          <div class="info-row"><span class="info-label">Verba Liberada</span><span class="info-val">${formatCurrency(embTotal)}</span></div>
+          <div class="info-row"><span class="info-label">Valor Utilizado</span><span class="info-val" style="color:${embColor}">${formatCurrency(embUsada)}</span></div>
+          <div class="info-row"><span class="info-label">Saldo Final</span><span class="info-val" style="color:var(--color-success)">${formatCurrency(embSobra)}</span></div>
+          <div class="progress-wrapper"><div class="progress-bar" style="width: ${Math.min(embPerc, 100)}%; background-color: ${embColor}"></div></div>
+          <div class="perc-text"><span>${embPerc.toFixed(1).replace('.', ',')}% Usado</span></div>
+        </article>
+
+        <article class="card">
+          <span class="card-label">🖨️ Impressos</span>
+          <div class="info-row"><span class="info-label">Verba Liberada</span><span class="info-val">${formatCurrency(impTotal)}</span></div>
+          <div class="info-row"><span class="info-label">Valor Utilizado</span><span class="info-val" style="color:${impColor}">${formatCurrency(impUsada)}</span></div>
+          <div class="info-row"><span class="info-label">Saldo Final</span><span class="info-val" style="color:var(--color-success)">${formatCurrency(impSobra)}</span></div>
+          <div class="progress-wrapper"><div class="progress-bar" style="width: ${Math.min(impPerc, 100)}%; background-color: ${impColor}"></div></div>
+          <div class="perc-text"><span>${impPerc.toFixed(1).replace('.', ',')}% Usado</span></div>
+        </article>
+      `;
+    }
+
+    // --- GRÁFICO DE LINHAS (HISTÓRICO) ---
+    function renderHistoricalChart() {
+      const ctx = document.getElementById('lineChart').getContext('2d');
+      const labels = uniqueDates.map(formatMonthName);
+      
+      const dataEmb = uniqueDates.map(date => {
+        let r = rawData.find(row => row[0] === date); return r ? parseCurrency(r[2]) : 0;
+      });
+      const dataImp = uniqueDates.map(date => {
+        let r = rawData.find(row => row[0] === date); return r ? parseCurrency(r[5]) : 0;
+      });
+
+      myLineChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Embalagem', data: dataEmb,
+              borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)',
+              borderWidth: 2, fill: true, tension: 0.4,
+              pointBackgroundColor: '#fff', pointBorderColor: '#3b82f6', pointRadius: 4
+            },
+            {
+              label: 'Impressos', data: dataImp,
+              borderColor: '#8b5cf6', backgroundColor: 'rgba(139, 92, 246, 0.1)',
+              borderWidth: 2, fill: true, tension: 0.4,
+              pointBackgroundColor: '#fff', pointBorderColor: '#8b5cf6', pointRadius: 4
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8, font: {family: 'Inter'} } },
+            tooltip: { callbacks: { label: (ctx) => ctx.dataset.label + ': ' + formatCurrency(ctx.raw) } }
+          },
+          scales: {
+            y: { beginAtZero: true, grid: { borderDash: [4, 4], color: '#e2e8f0' }, border: {display: false} },
+            x: { grid: { display: false }, border: {display: false} }
+          }
+        }
+      });
+    }
+
+    // --- CALCULADORA DIREITA ---
+    function renderChecklist() {
+      let html = '<div class="check-grid">';
+      uniqueDates.forEach((date, i) => {
+        html += `<label class="check-label" id="label-chk-${i}"><input type="checkbox" class="month-chk" value="${date}" onchange="calculateCustom()"><span>${formatMonthName(date)}</span></label>`;
+      });
+      html += '</div>';
+
+      html += `
+        <div class="quick-actions">
+          <button class="quick-btn" onclick="checkLastN(3)">3 Meses</button>
+          <button class="quick-btn" onclick="checkLastN(6)">6 Meses</button>
+          <button class="quick-btn" onclick="checkAll(true)">Todos</button>
+          <button class="quick-btn" onclick="checkAll(false)">Limpar</button>
+        </div>
+      `;
+      document.getElementById('checklistArea').innerHTML = html;
+    }
+
+    function checkAll(status) { document.querySelectorAll('.month-chk').forEach(chk => chk.checked = status); calculateCustom(); }
+    function checkLastN(n) { checkAll(false); let chks = Array.from(document.querySelectorAll('.month-chk')); chks.slice(-n).forEach(chk => chk.checked = true); calculateCustom(); }
+
+    function calculateCustom() {
+      let sumVerbaTotal = 0, sumEmbUsada = 0, sumImpUsada = 0, sumEmbSobra = 0, sumImpSobra = 0, selectedCount = 0;
+
+      document.querySelectorAll('.month-chk').forEach((chk, index) => {
+        let label = document.getElementById(`label-chk-${index}`);
+        if (chk.checked) {
+          label.classList.add('active-mark'); selectedCount++;
+          let row = rawData.find(r => r[0] === chk.value);
+          if (row) {
+            sumVerbaTotal += (parseCurrency(row[1]) + parseCurrency(row[4]));
+            sumEmbUsada += parseCurrency(row[2]); sumImpUsada += parseCurrency(row[5]);
+            sumEmbSobra += parseCurrency(row[3]); sumImpSobra += parseCurrency(row[6]);
+          }
+        } else {
+          label.classList.remove('active-mark'); 
+        }
+      });
+
+      let sumVerbaUsada = sumEmbUsada + sumImpUsada;
+      let sumSobraTotal = sumEmbSobra + sumImpSobra;
+      let title = selectedCount === 0 ? "Nenhum selecionado" : selectedCount === 1 ? "1 Mês Selecionado" : `${selectedCount} Meses Selecionados`;
+
+      let percGlobal = sumVerbaTotal > 0 ? (sumVerbaUsada / sumVerbaTotal) * 100 : 0;
+      let barColor = percGlobal >= 90 ? "var(--color-danger)" : (percGlobal >= 70 ? "var(--color-warning)" : "var(--color-success)");
+      if(selectedCount === 0) barColor = "var(--border-light)"; 
+
+      document.getElementById('sidePanelArea').innerHTML = `
+        <div style="font-size:13px; color:var(--text-muted); font-weight:600; margin-bottom: 20px; text-align:center;">${title}</div>
+        
+        <div class="side-result-item">
+          <span class="side-result-label">Verba Geral Liberada</span>
+          <span class="side-result-val">${formatCurrency(sumVerbaTotal)}</span>
+        </div>
+        
+        <div class="side-result-item">
+          <span class="side-result-label">Verba Geral Utilizada</span>
+          <span class="side-result-val" style="color: ${selectedCount > 0 ? barColor : 'inherit'}">${formatCurrency(sumVerbaUsada)}</span>
+          ${selectedCount > 0 ? `
+          <div class="clean-breakdown">
+             <span>📦 <strong>${formatCurrency(sumEmbUsada)}</strong></span>
+             <span>🖨️ <strong>${formatCurrency(sumImpUsada)}</strong></span>
+          </div>` : ''}
+        </div>
+
+        <div class="side-result-item" style="margin-bottom: 0;">
+          <span class="side-result-label">Sobra Acumulada</span>
+          <span class="side-result-val" style="color: var(--color-success)">${formatCurrency(sumSobraTotal)}</span>
+          ${selectedCount > 0 ? `
+          <div class="clean-breakdown">
+             <span>📦 <strong>${formatCurrency(sumEmbSobra)}</strong></span>
+             <span>🖨️ <strong>${formatCurrency(sumImpSobra)}</strong></span>
+          </div>` : ''}
+        </div>
+
+        <div class="progress-wrapper">
+          <div class="progress-bar" style="width: ${Math.min(percGlobal, 100)}%; background-color: ${barColor}"></div>
+        </div>
+        <div class="perc-text" style="margin-top: 4px;">
+          <span>${percGlobal.toFixed(1).replace('.', ',')}% Consumido do total</span>
+        </div>
+      `;
+    }
+
+    function showError(msg) { document.getElementById('loader').innerHTML = `<span style="color:red;">Erro: ${msg}</span>`; }
+  </script>
+</body>
+</html>
