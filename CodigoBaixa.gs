@@ -2,7 +2,7 @@ const SHEET_ID = '1HPuW7JvmO9_ss0rCayi1MnW9hydRMgXTyDopSlkAO9o';
 
 function doGet() {
   return HtmlService.createHtmlOutputFromFile('DashboardVerba')
-    .setTitle('Painel Executivo - Suprimentos')
+    .setTitle('Painel Executivo ')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
 }
